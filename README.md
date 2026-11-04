@@ -688,3 +688,44 @@ GitHub Actions:
 https://github.com/amt-kwame-agyabeng/nomad-canary-demo/actions
 
 
+
+## Final GitHub Actions Failure-Path Validation
+
+On 4 November 2026, a controlled failure test was performed to verify that the CI/CD pipeline correctly handles an unsuccessful Nomad deployment.
+
+### Test procedure
+
+1. Confirmed that Nomad Job Version 10 was healthy and stable.
+2. Temporarily configured the Nomad task with `HEALTH_STATUS = "unhealthy"`.
+3. Validated the modified Nomad job specification.
+4. Committed and pushed the intentionally unhealthy configuration to the `main` branch.
+5. GitHub Actions built and published the Docker image before attempting deployment to Nomad.
+
+### Results
+
+| Component | Result |
+|---|---|
+| GitHub Actions build and publish | Successful |
+| Deploy to Nomad | Failed as expected |
+| Previous stable version | 10 |
+| Unhealthy deployment version | 11 |
+| Automatic rollback version | 12 |
+| Final Nomad deployment | Successful |
+| Running allocations | 1 |
+| Healthy allocations | 1 |
+| Unhealthy allocations | 0 |
+| Consul health check | Passing |
+| Application health endpoint | HTTP 200 |
+
+The deployment job started at 16:46:44 UTC and completed at 16:52:43 UTC with a `Failed` result.
+
+Nomad automatically reverted the unhealthy deployment to the previous stable configuration. The restored application returned HTTP 200 with a healthy status.
+
+### Acceptance Criteria Verification
+
+- [x] Broken deployment automatically rolls back without manual intervention.
+- [x] GitHub Actions reports deployment failure when the Nomad rollout fails.
+- [x] Deployment pipeline waits for rollout completion and verifies its result.
+- [x] Engineering runbook and Nomad update review checklist delivered.
+
+The failure-path test demonstrated that CI correctly reports a failed deployment even though Nomad subsequently restores application health.

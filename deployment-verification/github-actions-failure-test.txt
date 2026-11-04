@@ -1,0 +1,48 @@
+NOMAD CANARY DEPLOYMENT - GITHUB ACTIONS FAILURE TEST
+
+Date: 2026-11-04
+
+Test objective:
+Verify that GitHub Actions reports a failed deployment when
+Nomad rejects an unhealthy canary deployment, while Nomad
+automatically rolls back to the previous stable version.
+
+GitHub Actions:
+Deploy to Nomad started: 16:46:44 UTC
+Deploy to Nomad completed: 16:52:43 UTC
+Result: Failed
+
+Nomad deployment evidence:
+
+Previous stable version: 10
+Intentionally unhealthy version: 11
+Automatic rollback version: 12
+
+Final Nomad status:
+Job status: Running
+Latest deployment: Successful
+Running allocations: 1
+Healthy allocations: 1
+Unhealthy allocations: 0
+
+Allocation evidence:
+Version 11 allocation ae37732c: Stopped
+Version 12 allocation b00316d8: Running
+
+Consul health verification:
+Check name: application-health
+Status: Passing
+HTTP response: 200 OK
+Application status: healthy
+Application version: 1.0.0
+
+Conclusion:
+The controlled unhealthy deployment caused the GitHub Actions
+Deploy to Nomad job to fail. Nomad automatically reverted to
+the previous stable configuration and restored application
+health without manual intervention.
+
+Note:
+The GitHub Actions failure and Nomad rollback are separate
+outcomes: CI correctly reports the failed rollout even though
+Nomad subsequently restores service health.

@@ -401,7 +401,118 @@ Important records include:
 
 The failed manual deployment record was reconstructed from the terminal output because the deployment ID was no longer retrievable through the Nomad deployment-status command. It should therefore be treated as a manually documented experiment record rather than a direct deployment-status export.
 
-## 12. Security and Operational Considerations
+---
+
+## 12. GitHub Actions Failure-Path Validation
+
+### Purpose
+
+This test verifies that an unsuccessful Nomad canary deployment causes the GitHub Actions deployment job to fail while Nomad automatically restores the previous stable version.
+
+Perform this test only in the isolated development lab.
+
+### Pre-test checks
+
+Confirm that:
+- Nomad and Consul are running.
+- The self-hosted GitHub Actions runner is online.
+- The current Nomad job is healthy and stable.
+- The Nomad update block has `canary = 1` and `auto_revert = true`.
+- The normal job configuration does not contain an unhealthy health-status override.
+
+Record the current stable job version before testing.
+
+### Execute the controlled failure
+
+1. Temporarily add the following environment block inside the Nomad task:
+
+   ```hcl
+   env {
+     HEALTH_STATUS = "unhealthy"
+   }
+   ```
+
+2. Validate the job specification:
+
+   ```bash
+   nomad job validate -var="image=ghcr.io/amt-kwame-agyabeng/nomad-canary-demo:latest" nomad-canary-demo.nomad
+   ```
+
+3. Commit and push the test configuration to the repository's `main` branch.
+
+4. Monitor the GitHub Actions workflow.
+
+### Expected GitHub Actions result
+
+- Build, Test and Publish should complete successfully.
+- Deploy to Nomad should fail when Nomad reports an unsuccessful rollout.
+- The deployment script should return a non-zero exit status.
+
+A failed deployment job is the expected result of this controlled negative test.
+
+### Verify automatic rollback
+
+Check the Nomad job:
+
+```bash
+nomad job status nomad-canary-demo
+```
+
+Review its version history:
+
+```bash
+nomad job history nomad-canary-demo
+```
+
+Check the Consul health status:
+
+```bash
+curl -s http://127.0.0.1:8500/v1/health/checks/nomad-canary-demo
+```
+
+Confirm that:
+- The intentionally unhealthy version is no longer running.
+- Nomad has successfully restored the previous stable configuration.
+- One healthy allocation is running.
+- No unhealthy allocations remain.
+- Consul reports the application health check as passing.
+- The application responds with HTTP 200.
+
+### Recorded test results — 4 November 2026
+
+| Item | Result |
+|---|---|
+| Previous stable job version | 10 |
+| Unhealthy job version | 11 |
+| Automatic rollback version | 12 |
+| GitHub Actions deployment result | Failed |
+| Final Nomad deployment | Successful |
+| Final running allocation | 1 |
+| Healthy allocations | 1 |
+| Unhealthy allocations | 0 |
+| Consul health status | Passing |
+| Application health response | HTTP 200 |
+
+GitHub Actions recorded the deployment job as started at 16:46:44 UTC and completed at 16:52:43 UTC with a failed result.
+
+Nomad independently completed the automatic rollback, restoring the previous healthy configuration without manual intervention.
+
+The complete test evidence is stored in:
+
+`deployment-verification/github-actions-failure-test.txt`
+
+### Restore the healthy configuration
+
+After the test:
+1. Remove the temporary `HEALTH_STATUS = "unhealthy"` environment block.
+2. Validate the restored Nomad job specification.
+3. Commit and push the healthy configuration.
+4. Confirm that the subsequent GitHub Actions deployment succeeds.
+5. Verify that the Nomad job and Consul health check remain healthy.
+
+**Operational note:** The failed GitHub Actions deployment and successful Nomad rollback are separate outcomes. CI correctly reports the unsuccessful rollout, while Nomad independently restores the previously stable application.
+
+## 13. Security and Operational Considerations
 
 The current implementation is restricted to a local development lab.
 
@@ -422,7 +533,7 @@ The GitHub repository is public and uses a persistent self-hosted runner with ac
 
 Nomad and Consul development APIs must not be exposed to the public internet.
 
-## 13. Production Readiness Review
+## 14. Production Readiness Review
 
 Before adapting this implementation to a real environment, the reviewing engineer should confirm:
 
@@ -438,7 +549,7 @@ Before adapting this implementation to a real environment, the reviewing enginee
 - [ ] Logging, metrics, and alerting are configured.
 - [ ] Recovery and escalation procedures are documented.
 
-## 14. Demonstration Results
+## 15. Demonstration Results
 
 The completed proof of concept demonstrated:
 
@@ -456,7 +567,7 @@ The latest verified deployment was job version 7.
 
 GitHub Actions workflow run #5 completed successfully in 1 minute 26 seconds.
 
-## 15. Handover Notes
+## 16. Handover Notes
 
 The engineer receiving this project should:
 
@@ -476,5 +587,7 @@ https://github.com/amt-kwame-agyabeng/nomad-canary-demo
 https://github.com/amt-kwame-agyabeng/nomad-canary-demo/actions
 
 ---
+
+
 
 **End of Runbook**
