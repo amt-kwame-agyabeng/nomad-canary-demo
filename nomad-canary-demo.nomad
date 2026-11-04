@@ -50,10 +50,6 @@ job "nomad-canary-demo" {
         ports = ["http"]
       }
 
-       env {
-         HEALTH_STATUS = "unhealthy"
-      }
-
 
       resources {
         cpu    = 500
