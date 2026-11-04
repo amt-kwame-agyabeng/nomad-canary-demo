@@ -1,0 +1,107 @@
+
+name: Build and Publish Nomad Canary Demo
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-test-publish:
+    name: Build, Test and Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Define image name
+        run: |
+          echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Build Docker image
+        run: |
+          docker buildx build --load \
+            -t "$IMAGE_NAME:$GITHUB_SHA" \
+            -t "$IMAGE_NAME:latest" \
+            .
+
+      - name: Start test container
+        run: |
+          docker run -d \
+            --name canary-test \
+            -p 127.0.0.1:5000:5000 \
+            -e APP_VERSION="$GITHUB_SHA" \
+            "$IMAGE_NAME:$GITHUB_SHA"
+
+      - name: Test application health
+        run: |
+          HEALTHY=0
+
+          for i in {1..20}; do
+            if curl -fsS http://localhost:5000/health; then
+              HEALTHY=1
+              break
+            fi
+            echo "Waiting for application health..."
+            sleep 2
+          done
+
+          if [ "$HEALTHY" -ne 1 ]; then
+            echo "Health check failed"
+            docker logs canary-test
+            exit 1
+          fi
+
+      - name: Verify unhealthy endpoint behavior
+        run: |
+          docker stop canary-test
+          docker rm canary-test
+
+          docker run -d \
+            --name canary-test \
+            -p 127.0.0.1:5000:5000 \
+            -e HEALTH_STATUS=unhealthy \
+            "$IMAGE_NAME:$GITHUB_SHA"
+
+          sleep 3
+          
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            http://localhost:5000/health || true)
+
+          if [ "$STATUS" != "503" ]; then
+            echo "ERROR: Expected HTTP 503, received $STATUS"
+            exit 1
+          else
+            echo "Expected HTTP 503, received successfully"
+          fi
+
+      - name: Clean up test container
+        if: always()
+        run: |
+          docker rm -f canary-test 2>/dev/null || true
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        run: |
+          docker push "$IMAGE_NAME:$GITHUB_SHA"
+          docker push "$IMAGE_NAME:latest"
+
+      - name: Display published image
+        run: |
+          echo "Published image: $IMAGE_NAME:$GITHUB_SHA"
+          echo "Published image: $IMAGE_NAME:latest"
