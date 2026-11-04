@@ -3,6 +3,8 @@
 set -Eeuo pipefail
 
 JOB_FILE="${1:-nomad-canary-demo.nomad}"
+IMAGE="${2:-}"
+
 JOB_ID="nomad-canary-demo"
 
 if [[ ! -f "$JOB_FILE" ]]; then
@@ -10,30 +12,34 @@ if [[ ! -f "$JOB_FILE" ]]; then
     exit 1
 fi
 
+if [[ -z "$IMAGE" ]]; then
+    echo "ERROR: Docker image reference was not provided."
+    echo "Usage: ./deploy.sh <job-file> <image-reference>"
+    exit 1
+fi
+
 echo "======================================"
 echo " Nomad Canary Deployment"
 echo "======================================"
+echo "Image: $IMAGE"
 
 # Check prerequisites
-if ! command -v nomad >/dev/null 2>&1; then
-    echo "ERROR: Nomad CLI is not installed."
-    exit 1
-fi
-
-if ! command -v jq >/dev/null 2>&1; then
-    echo "ERROR: jq is not installed."
-    exit 1
-fi
+for cmd in nomad jq docker; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "ERROR: Required command not found: $cmd"
+        exit 1
+    fi
+done
 
 # Validate job configuration
 echo "[1/3] Validating Nomad job..."
 
-nomad job validate "$JOB_FILE"
+nomad job validate -var="image=$IMAGE" "$JOB_FILE"
 
 # Submit the job and wait for deployment completion
 echo "[2/3] Submitting job and waiting for deployment..."
 
-if ! nomad job run -detach=false "$JOB_FILE"; then
+if ! nomad job run -detach=false -var="image=$IMAGE" "$JOB_FILE"; then
     echo "ERROR: Nomad deployment failed."
     exit 1
 fi

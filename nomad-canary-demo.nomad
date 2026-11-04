@@ -1,3 +1,7 @@
+variable "image" {
+  type = string
+}
+
 job "nomad-canary-demo" {
   datacenters = ["dc1"]
   type        = "service"
@@ -42,7 +46,7 @@ job "nomad-canary-demo" {
       driver = "docker"
 
       config {
-        image = "ghcr.io/amt-kwame-agyabeng/nomad-canary-demo:bf8589af0b8238bdf2f530db0723cb71bf70ff39"
+        image = var.image
         ports = ["http"]
       }
 

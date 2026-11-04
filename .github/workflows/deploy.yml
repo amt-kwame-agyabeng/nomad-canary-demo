@@ -105,3 +105,26 @@ jobs:
         run: |
           echo "Published image: $IMAGE_NAME:$GITHUB_SHA"
           echo "Published image: $IMAGE_NAME:latest"
+
+  deploy-to-nomad:
+    name: Deploy to Nomad
+    needs: build-test-publish
+
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+
+    runs-on: [self-hosted, Linux, X64]
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy image to Nomad
+        run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}"
+
+          echo "Deploying image: $IMAGE"
+
+          ./deploy.sh nomad-canary-demo.nomad "$IMAGE"
