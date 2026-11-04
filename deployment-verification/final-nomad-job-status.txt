@@ -1,0 +1,29 @@
+ID            = nomad-canary-demo
+Name          = nomad-canary-demo
+Submit Date   = 2026-11-04T12:05:03Z
+Type          = service
+Priority      = 50
+Datacenters   = dc1
+Namespace     = default
+Node Pool     = default
+Status        = running
+Periodic      = false
+Parameterized = false
+
+Summary
+Task Group  Queued  Starting  Running  Failed  Complete  Lost  Unknown
+web         0       0         1        0       1         0     0
+
+Latest Deployment
+ID          = 35dd218f
+Status      = successful
+Description = Deployment completed successfully
+
+Deployed
+Task Group  Auto Revert  Desired  Placed  Healthy  Unhealthy  Progress Deadline
+web         true         1        1       1        0          2026-11-04T12:18:32Z
+
+Allocations
+ID        Node ID   Task Group  Version  Desired  Status    Created     Modified
+00376f05  64acb4f5  web         3        stop     complete  11m56s ago  6m42s ago
+ea1d4572  64acb4f5  web         4        run      running   39m48s ago  6m32s ago

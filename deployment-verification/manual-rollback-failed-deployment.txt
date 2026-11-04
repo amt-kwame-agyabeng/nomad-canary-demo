@@ -1,0 +1,28 @@
+MANUAL ROLLBACK EXPERIMENT - FAILED DEPLOYMENT
+
+Job: nomad-canary-demo
+Job Version: 5
+Deployment ID: 38122266
+Submission Time: 2026-11-04T12:33:07Z
+Failure Time: 2026-11-04T12:38:23Z
+
+Deployment Status: failed
+Description: Failed due to progress deadline
+
+Task Group: web
+Promoted: false
+Desired: 1
+Canaries: 1
+Placed: 1
+Healthy: 0
+Unhealthy: 1
+
+Automatic Rollback: Disabled (auto_revert = false)
+
+Recovery Action:
+The operator manually executed:
+nomad job revert nomad-canary-demo 4
+
+Result:
+Manual rollback completed successfully as job version 6.
+Deployment ID: 8dadad16

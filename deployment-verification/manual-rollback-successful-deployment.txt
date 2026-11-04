@@ -1,0 +1,9 @@
+ID          = 8dadad16
+Job ID      = nomad-canary-demo
+Job Version = 6
+Status      = successful
+Description = Deployment completed successfully
+
+Deployed
+Task Group  Auto Revert  Desired  Placed  Healthy  Unhealthy  Progress Deadline
+web         true         1        1       1        0          2026-11-04T12:54:05Z

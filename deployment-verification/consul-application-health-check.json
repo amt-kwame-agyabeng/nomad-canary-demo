@@ -1,0 +1,20 @@
+[
+    {
+        "Node": "KWAMZZY",
+        "CheckID": "_nomad-check-31737f6a71c349b19ddeac93653d5450dc3cd637",
+        "Name": "application-health",
+        "Status": "passing",
+        "Notes": "",
+        "Output": "HTTP GET http://127.0.0.1:27241/health: 200 OK Output: {\"status\":\"healthy\",\"version\":\"1.0.0\"}\n",
+        "ServiceID": "_nomad-task-ea1d4572-9eff-1c59-1fdd-fea32632d4e6-group-web-nomad-canary-demo-http",
+        "ServiceName": "nomad-canary-demo",
+        "ServiceTags": [],
+        "Type": "http",
+        "Interval": "10s",
+        "Timeout": "2s",
+        "ExposedPort": 0,
+        "Definition": {},
+        "CreateIndex": 84,
+        "ModifyIndex": 86
+    }
+]

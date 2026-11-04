@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Wed, 04 Nov 2026 12:51:32 GMT
+Connection: close
+Content-Type: application/json
+Content-Length: 39
+
+{"status":"healthy","version":"1.0.0"}
